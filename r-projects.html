@@ -21,14 +21,13 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            height: 50%;
             padding: 10px;
             margin-top: 50px; /* Increased margin to move the boxes further down */
         }
         .row {
             display: flex;
-            flex-direction: row;
-            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
             width: 100%;
         }
         .col-4, .col-6-medium, .col-12-small {
@@ -75,19 +74,20 @@
         .box.style3 p {
             font-size: 0.85rem; /* Adjust the font size as needed */
         }
+        @media (max-width: 768px) {
+            .header {
+                margin-top: 50px; /* Adjusted margin for smaller screens */
+            }
+            .box {
+                height: auto; /* Auto height for smaller screens */
+            }
+            .box .image {
+                height: 150px; /* Adjusted height for images on smaller screens */
+            }
+        }
     </style>
 </head>
 <body>
-    
-    <style>
-        .header {
-            max-width: 800px; /* Adjust the value according to your layout */
-            margin: 0 auto; /* Center the content horizontally */
-            padding: 20px; /* Add some padding for spacing */
-        }
-    </style>
-
-</body>
 
     <div class="header">
         <h1><strong>R Projects</strong></h1>
