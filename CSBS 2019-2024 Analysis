@@ -1,0 +1,930 @@
+#Data Analysis of UK Cyber Security Breaches Survey Data 2019 and 2024
+
+
+# Load required libraries
+install.packages("scales")
+install.packages("ggthemes")
+install.packages("tidyverse")
+install.packages("viridis")
+
+library(haven)
+library(dplyr)
+library(ggplot2)
+library(scales)      
+library(ggthemes)
+library(tidyverse)
+
+
+
+#Loading the data
+survey2019 <- read_sav("csbs_2019_raw_data.sav") 
+survey2024 <- read_sav("csbs_2024_archive_data_public.sav") 
+
+
+#Survey2019 Analysis:
+
+#Cleaning the Data
+
+#Renaming column names
+survey2019 <- survey2019 %>% rename(
+  att_right_skills = attitude1,
+  att_enough_people = attitude2,
+  att_act_on_advise = attitude3,
+  att_informed_choice = attitude4,
+  
+  train_sem_conf = train1,
+  train_ext_train = train2,
+  train_int_train = train3,
+  train_dont_know = train4,
+  train_none = train5,
+  
+  iden_int_audit = ident1,
+  iden_bus_health_check = ident2,
+  iden_ad_hoc = ident3,
+  iden_risk_assess = ident4,
+  iden_invest = ident5,
+  iden_dont_know = ident6,
+  iden_none = ident7,
+  iden_ext_audit = ident8,
+  
+  pol_rem_device = policy1,
+  pol_remote = policy2,
+  pol_permit = policy3,
+  pol_pers_devices = policy4,
+  pol_new_tech = policy5,
+  pol_data_class = policy6,
+  pol_doc_man = policy7,
+  pol_dont_know = policy8,
+  pol_none = policy9,
+  
+  type_ransomware = type1,
+  type_viruses = type2,
+  type_web_attack = type3,
+  type_online_banking = type4,
+  type_impersonation = type5,
+  type_fraud_email = type6,
+  type_unauth_use = type7,
+  type_hacking = type8,
+  type_other = type9,
+  type_dont_know = type10,
+  type_none = type11,
+  type_refused = type12,
+  
+  out_damage = outcome1,
+  out_personal = outcome2,
+  out_perm_loss = outcome3,
+  out_temp_loss = outcome4,
+  out_lost_asset = outcome5,
+  out_money_stole = outcome6,
+  out_web_down = outcome7,
+  out_access_third = outcome8,
+  out_dont_know = outcome9,
+  out_none = outcome10,
+  
+  imp_daytoday = impact1,
+  imp_revenue = impact2,
+  imp_add_time = impact3,
+  imp_repair = impact4,
+  imp_new_measures = impact5,
+  imp_fines = impact7,
+  imp_rep_damage = impact8,
+  imp_prev_provison = impact9,
+  imp_discourage = impact10,
+  imp_none = impact11,
+  imp_dont_know = impact12,
+  imp_complain = impact13,
+  imp_goodwill = impact14)
+
+# Filtering dataset
+survey2019_cleaned <- survey2019 %>%
+  select(
+
+    #Organisational Characteristics
+    samptype, questtype, typex, income2, sector_comb2, region_comb, sizeb,
+    
+    #Attitudes to Cybersecurity
+    att_right_skills, att_enough_people, att_act_on_advise, att_informed_choice,
+    priority, update, insurex,
+    
+    #Cybersecurity Training
+    train_sem_conf, train_ext_train, train_int_train, train_dont_know, train_none,
+    
+    #Identifying Cybersecurity Threats
+    iden_int_audit, iden_bus_health_check, iden_ad_hoc, iden_risk_assess, iden_invest,
+    iden_dont_know, iden_none, iden_ext_audit,
+    
+    # Cybersecurity Policies
+    pol_rem_device, pol_remote, pol_permit, pol_pers_devices, pol_new_tech,
+    pol_data_class, pol_doc_man, pol_dont_know, pol_none, review,
+    
+    # Cybersecurity Attack Types
+    type_ransomware, type_viruses, type_web_attack, type_online_banking,
+    type_impersonation, type_fraud_email, type_unauth_use, type_hacking,
+    type_other, type_dont_know, type_none, type_refused,
+    freq, length, cost_bands, cloud, incid,         
+    
+    # Outcomes of Cyber Attacks
+    out_damage, out_personal, out_perm_loss, out_temp_loss, out_lost_asset,
+    out_money_stole, out_web_down, out_access_third, out_dont_know, out_none,
+    
+    # Impacts of Cyber Attacks
+    imp_daytoday, imp_revenue, imp_add_time, imp_repair, imp_new_measures,
+    imp_fines, imp_rep_damage, imp_prev_provison, imp_discourage,
+    imp_none, imp_dont_know, imp_complain, imp_goodwill,
+    
+    # GDPR
+    restore, gdprcyber, gdprchange, gdpraware)
+
+#Renaming the variable labels
+survey2019_cleaned$samptype <- factor(survey2019_cleaned$samptype, levels = c(1, 2), labels = c("Business", "Charity"))
+survey2019_cleaned$questtype <- factor(survey2019_cleaned$questtype, levels = c(1, 2), labels = c("Private sector", "Charity"))
+survey2019_cleaned$typex <- factor(survey2019_cleaned$typex, levels = c(1, 2, 3,-97), labels = c("Mainly seeking to make a profit", "A social enterprise", "A charity or voluntary sector organisation", "Don't Know"))
+survey2019_cleaned$income2 <- factor(survey2019_cleaned$income2, levels = c(1, 2, 3, -97), labels = c("Less than £100,000", "£100,000 to less than £500,000", "£500,000 or more", "Unknown"))
+survey2019_cleaned$sector_comb2 <- factor(survey2019_cleaned$sector_comb2, levels = 1:12, labels = c("Administration or real estate", "Construction", "Education", "Entertainment, service or membership organisations", "Finance or insurance", "Food or hospitality", "Health, social care or social work", "Information or communication", "Professional, scientific or technical", "Retail or wholesale", "Transport or storage", "Utilities or production"))
+survey2019_cleaned$region_comb <- factor(survey2019_cleaned$region_comb, levels = 1:7, labels = c("Midlands", "South of England", "North of England", "London", "Scotland", "Northern Ireland", "Wales"))
+survey2019_cleaned$sizeb <- factor(survey2019_cleaned$sizeb, levels = c(1, 2, 3, -97), labels = c("Micro", "Small", "Medium", "Large"))
+
+survey2019_cleaned$att_right_skills <- factor(survey2019_cleaned$att_right_skills, levels = c(1,2,3,4,5,-97), labels = c("Strongly agree", "Tend to agree", "Neither agree or disagree", "Tend to disagree", "Strongly Disagree", "Don't know"))
+survey2019_cleaned$att_enough_people <- factor(survey2019_cleaned$att_enough_people, levels = c(1,2,3,4,5,-97), labels = c("Strongly agree", "Tend to agree", "Neither agree or disagree", "Tend to disagree", "Strongly Disagree", "Don't know"))
+survey2019_cleaned$att_act_on_advise <- factor(survey2019_cleaned$att_act_on_advise, levels = c(1,2,3,4,5,-97), labels = c("Strongly agree", "Tend to agree", "Neither agree or disagree", "Tend to disagree", "Strongly Disagree", "Don't know"))
+survey2019_cleaned$att_informed_choice <- factor(survey2019_cleaned$att_informed_choice, levels = c(1,2,3,4,5,-97), labels = c("Strongly agree", "Tend to agree", "Neither agree or disagree", "Tend to disagree", "Strongly Disagree", "Don't know"))
+survey2019_cleaned$priority <- factor(survey2019_cleaned$priority, levels = c(1,2,3,-97), labels = c("Very high", "Fairly high", "Fairly low", "Very low"))
+survey2019_cleaned$update <- factor(survey2019_cleaned$update, levels = 1:8, labels = c("Never", "Less than once a year", "Annually", "Quarterly", "Monthly", "Weekly", "Daily", "Each time there is a breach or attack"))
+survey2019_cleaned$insurex <- factor(survey2019_cleaned$insurex, levels = 1:3, labels = c("We have a specific cyber security insurance policy", "We do not currently have a specific cyber security insurance policy, but have previously considered it", "We do not currently have a specific cyber security insurance policy and have not previously considered it"))
+
+survey2019_cleaned$train_sem_conf <- factor(survey2019_cleaned$train_sem_conf, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$train_ext_train <- factor(survey2019_cleaned$train_ext_train, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$train_int_train <- factor(survey2019_cleaned$train_int_train, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$train_dont_know <- factor(survey2019_cleaned$train_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$train_none <- factor(survey2019_cleaned$train_none, levels = 0:1, labels = c("No", "Yes"))
+
+survey2019_cleaned$iden_int_audit <- factor(survey2019_cleaned$iden_int_audit, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_bus_health_check <- factor(survey2019_cleaned$iden_bus_health_check, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_ad_hoc <- factor(survey2019_cleaned$iden_ad_hoc, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_risk_assess <- factor(survey2019_cleaned$iden_risk_assess, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_invest <- factor(survey2019_cleaned$iden_invest, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_ext_audit <- factor(survey2019_cleaned$iden_ext_audit, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_dont_know <- factor(survey2019_cleaned$iden_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$iden_none <- factor(survey2019_cleaned$iden_none, levels = 0:1, labels = c("No", "Yes"))
+
+survey2019_cleaned$pol_rem_device <- factor(survey2019_cleaned$pol_rem_device, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_remote <- factor(survey2019_cleaned$pol_remote, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_permit <- factor(survey2019_cleaned$pol_permit, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_pers_devices <- factor(survey2019_cleaned$pol_pers_devices, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_new_tech <- factor(survey2019_cleaned$pol_new_tech, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_data_class <- factor(survey2019_cleaned$pol_data_class, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_doc_man <- factor(survey2019_cleaned$pol_doc_man, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_dont_know <- factor(survey2019_cleaned$pol_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$pol_none <- factor(survey2019_cleaned$pol_none, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$review <- factor(survey2019_cleaned$review, levels = 1:4, labels = c("Within the last 6 months", "6 to under 12 months ago", "12 to under 24 months ago", "24 months ago or earlier"))
+
+survey2019_cleaned$type_ransomware <- factor(survey2019_cleaned$type_ransomware, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_viruses <- factor(survey2019_cleaned$type_viruses, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_web_attack <- factor(survey2019_cleaned$type_web_attack, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_online_banking <- factor(survey2019_cleaned$type_online_banking, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_impersonation <- factor(survey2019_cleaned$type_impersonation, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_fraud_email <- factor(survey2019_cleaned$type_fraud_email, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_unauth_use <- factor(survey2019_cleaned$type_unauth_use, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_hacking <- factor(survey2019_cleaned$type_hacking, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_dont_know <- factor(survey2019_cleaned$type_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$type_none <- factor(survey2019_cleaned$type_none, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$freq <- factor(survey2019_cleaned$freq, levels = 1:6, labels = c("Once only", "More than once but less than once a month", "Roughly once a month", "Roughly once a week", "Roughly once a day", "Several times a day"))
+survey2019_cleaned$cost_bands <- factor(survey2019_cleaned$cost_bands, levels = 1:11, labels = c("Less than £500", "£500 to less than £1,000", "£1,000 to less than £5,000", "£5,000 to less than £10,000", "£10,000 to less than £20,000", "£20,000 to less than £50,000", "£50,000 to less than £100,000", "£100,000 to less than £500,000", "£500,000 to less than £1 million", "£1 million to less than £5 million", "£5 million or more"))
+survey2019_cleaned$length <- factor(survey2019_cleaned$length, levels = 1:7, c("Immediate", "Within 24 hours", "Within a week", "Within a month", "Within 100 days", "Longer than 100 days", "Don't know"))
+
+survey2019_cleaned$out_damage <- factor(survey2019_cleaned$out_damage, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_personal <- factor(survey2019_cleaned$out_personal, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_perm_loss <- factor(survey2019_cleaned$out_perm_loss, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_temp_loss <- factor(survey2019_cleaned$out_temp_loss, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_lost_asset <- factor(survey2019_cleaned$out_lost_asset, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_money_stole <- factor(survey2019_cleaned$out_money_stole, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_web_down <- factor(survey2019_cleaned$out_web_down, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_access_third <- factor(survey2019_cleaned$out_access_third, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_dont_know <- factor(survey2019_cleaned$out_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$out_none <- factor(survey2019_cleaned$out_none, levels = 0:1, labels = c("No", "Yes"))
+
+survey2019_cleaned$imp_daytoday <- factor(survey2019_cleaned$imp_daytoday, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_revenue  <- factor(survey2019_cleaned$imp_revenue, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_add_time  <- factor(survey2019_cleaned$imp_add_time, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_repair  <- factor(survey2019_cleaned$imp_repair, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_new_measures  <- factor(survey2019_cleaned$imp_new_measures, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_fines  <- factor(survey2019_cleaned$imp_fines, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_rep_damage  <- factor(survey2019_cleaned$imp_rep_damage, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_prev_provison  <- factor(survey2019_cleaned$imp_prev_provison, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_discourage  <- factor(survey2019_cleaned$imp_discourage, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_none  <- factor(survey2019_cleaned$imp_none, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_dont_know  <- factor(survey2019_cleaned$imp_dont_know, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_complain  <- factor(survey2019_cleaned$imp_complain, levels = 0:1, labels = c("No", "Yes"))
+survey2019_cleaned$imp_goodwill  <- factor(survey2019_cleaned$imp_goodwill, levels = 0:1, labels = c("No", "Yes"))
+
+survey2019_cleaned$restore  <- factor(survey2019_cleaned$restore, levels = c(1,2,3,4,5,6,-97), labels = c("No time at all", "Less than a day", "Between a day and under a week", "Between a week and under a month", "One month or more", "Still not back to normal", "Don't know"))
+survey2019_cleaned$incid <- factor(survey2019_cleaned$incid, levels = c(1,2,-97), labels = c("Yes", "No","Don't know"))
+survey2019_cleaned$gdprcyber <- factor(survey2019_cleaned$gdprcyber, levels = c(1,2,-97), labels = c("Yes", "No","Don't know"))
+survey2019_cleaned$gdprchange <- factor(survey2019_cleaned$gdprchange, levels = c(1,2,-97), labels = c("Yes", "No","Don't know"))
+survey2019_cleaned$gdpraware <- factor(survey2019_cleaned$gdpraware, levels = c(1,2,-97), labels = c("Yes", "No","Don't know"))
+
+
+#Exploratory Data Analysis
+ 
+#Frequency of cybersecurity Incidents by Business Size
+survey2019_cleaned %>%
+  filter(!is.na(freq), !is.na(sizeb)) %>%
+  ggplot(aes(x = sizeb, fill = freq)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Frequency of Cybersecurity Incidents by Business Size",
+       x = "Business Size", y = "Count", fill = "Incident Frequency") +
+  theme_minimal()
+
+#Frequency of cybersecurity Incidents by Sector
+survey2019_cleaned %>%
+  filter(!is.na(freq), !is.na(sector_comb2)) %>%
+  ggplot(aes(x = sector_comb2, fill = freq)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Frequency of Cybersecurity Incidents by Sector",
+       x = "Sector", y = "Count", fill = "Incident Frequency") +
+  theme_minimal()
+
+
+
+#Frequency of Attack Types
+attack2019_columns <- c("type_ransomware", "type_viruses", "type_web_attack", 
+                    "type_online_banking", "type_impersonation", "type_fraud_email", 
+                    "type_unauth_use", "type_hacking")
+
+attack2019_data <- survey2019_cleaned %>%
+  select(all_of(attack2019_columns)) %>%
+  summarise(across(everything(), ~sum(. == "Yes"))) %>% 
+  pivot_longer(cols = everything(), names_to = "attack2019_type", values_to = "incident_count")
+
+custom_labels19 <- c(
+  "type_ransomware" = "Ransomware",
+  "type_viruses" = "Viruses",
+  "type_web_attack" = "Website/Online Attacks",
+  "type_online_banking" = "Hacking Online Banking",
+  "type_impersonation" = "Impersonation",
+  "type_fraud_email" = "Fraudulent Emails",
+  "type_unauth_use" = "Unauthorised Use by Staff ",
+  "type_hacking" = "Unauthorised Use by Hackers")
+
+attack2019_data$attack2019_type <- recode(attack2019_data$attack2019_type, !!!custom_labels19)
+
+print(attack2019_data)
+
+ggplot(attack2019_data, aes(x = attack2019_type, y = incident_count, fill = attack2019_type)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  labs(title = "Frequency of Cybersecurity Attack Types in 2019",
+       x = "Attack Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#Frequency of attacks by Region
+if (is.numeric(survey2019_cleaned$freq)) {
+  survey2019_cleaned$freq <- factor(survey2019_cleaned$freq,
+                                    levels = 1:6,
+                                    labels = c("Once only", 
+                                               "More than once but less than once a month", 
+                                               "Roughly once a month", 
+                                               "Roughly once a week", 
+                                               "Roughly once a day", 
+                                               "Several times a day"))}
+
+if (is.numeric(survey2019_cleaned$region_comb)) {
+  survey2019_cleaned$region_comb <- factor(survey2019_cleaned$region_comb,
+                                           levels = 1:7,
+                                           labels = c("Midlands", "South of England", "North of England", 
+                                                      "London", "Scotland", "Northern Ireland", "Wales"))}
+
+survey2019_filtered <- survey2019_cleaned %>%
+  filter(!is.na(freq), !is.na(region_comb))
+
+freq_counts <- survey2019_filtered %>%
+  group_by(region_comb, freq) %>%
+  summarise(count = n(), .groups = "drop")
+
+ggplot(freq_counts, aes(x = region_comb, y = count, fill = freq)) +
+  geom_col(position = "stack") +
+  scale_fill_brewer(palette = "Reds") +
+  labs(
+    title = "Cybersecurity Incident Frequency by Region (2019)",
+    x = "Region",
+    y = "Number of Incidents",
+    fill = "Frequency"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+
+#Outcomes of Cyber Attacks
+outcome_labels19 <- c(
+  "out_damage" = "Loss of files or data",
+  "out_personal" = "Loss of personal data",
+  "out_perm_loss" = "Permanent loss of data",
+  "out_temp_loss" = "Temporary loss of data",
+  "out_lost_asset" = "Loss of assets, intellectual property or other",
+  "out_money_stole" = "Money stolen",
+  "out_web_down" = "Website or online services taken down",
+  "out_access_third" = "Access to other systems or data by third parties")
+
+outcome2019_data <- survey2019_cleaned %>%
+  select(all_of(names(outcome_labels19))) %>%
+  mutate(across(everything(), as.character)) %>%
+  
+  summarise(across(everything(), ~ sum(. == "Yes", na.rm = TRUE))) %>%
+  pivot_longer(cols = everything(), names_to = "outcome_type19", values_to = "count") %>%
+  mutate(outcome_type19 = recode(outcome_type19, !!!outcome_labels19))
+
+print(outcome2019_data)
+
+ggplot(outcome2019_data, aes(x = reorder(outcome_type19, count), y = count, fill = outcome_type19)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  
+  labs(title = "Outcomes of Cybersecurity Attacks (2019)",
+       x = "Consequence Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Impact of Cyber Attacks 
+impact_labels19 <- c(
+  "imp_daytoday" = "Impact day-to-day work",
+  "imp_revenue" = "Loss of Revenue",
+  "imp_add_time" = "Time to deal with attack",
+  "imp_repair" = "Repair/Recovery costs",
+  "imp_new_measures" = "Implemented New Measures",
+  "imp_fines" = "Fines",
+  "imp_rep_damage" = "Reputational Damage",
+  "imp_prev_provison" = "Prevented provision of goods",  
+  "imp_discourage" = "Discouraged from future activities",
+  "imp_complain" = "Customer complaints",
+  "imp_goodwill" = "Goodwill compensation")
+
+impact2019_data <- survey2019_cleaned %>%
+  select(all_of(names(impact_labels19))) %>%  
+  summarise(across(everything(), ~ sum(. == "Yes", na.rm = TRUE))) %>% 
+  pivot_longer(cols = everything(), names_to = "impact_type19", values_to = "count") %>%
+  mutate(impact_type19 = recode(impact_type19, !!!impact_labels19))  
+
+print(impact2019_data)
+
+ggplot(impact2019_data, aes(x = reorder(impact_type19, count), y = count, fill = impact_type19)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +
+  labs(title = "Impacts of Cybersecurity Attacks (2019)",
+       x = "Consequence Type",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#Correlation Tests
+
+# Attitudes to Cybersecurity
+attitude_vars19 <- survey2019_cleaned[, c("att_right_skills", "att_enough_people", "att_act_on_advise", "att_informed_choice")]
+
+attitude_vars_num19 <- data.frame(lapply(attitude_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_att19 <- cor(attitude_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_att19)
+
+
+# Training
+training_vars19 <- survey2019_cleaned[, c("train_sem_conf", "train_ext_train", "train_int_train", "train_dont_know", "train_none")]
+
+training_vars_num19 <- data.frame(lapply(training_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_training19 <- cor(training_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_training19)
+
+
+# Identification of Cyber Threats
+iden_vars19 <- survey2019_cleaned[, c("iden_int_audit", "iden_bus_health_check", "iden_ad_hoc", "iden_risk_assess", 
+                                      "iden_invest", "iden_dont_know", "iden_none", "iden_ext_audit")]
+
+iden_vars_num19 <- data.frame(lapply(iden_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_iden19 <- cor(iden_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_iden19)
+
+
+# Cybersecurity Policies
+policy_vars19 <- survey2019_cleaned[, c("pol_rem_device", "pol_remote", "pol_permit", "pol_pers_devices", 
+                                        "pol_new_tech", "pol_data_class", "pol_doc_man")]
+
+policy_vars_num19 <- data.frame(lapply(policy_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_policy19 <- cor(policy_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_policy19)
+
+# Outcomes
+outcome_vars19 <- survey2019_cleaned[, c("out_damage", "out_personal", "out_perm_loss", "out_temp_loss", 
+                                         "out_lost_asset", "out_money_stole", "out_web_down", "out_access_third")]
+
+outcome_vars_num19 <- data.frame(lapply(outcome_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}))
+
+cor_matrix_outcomes19 <- cor(outcome_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_outcomes19)
+
+
+# Impacts
+impact_vars19 <- survey2019_cleaned[, c("imp_daytoday", "imp_revenue", "imp_add_time", "imp_repair", "imp_new_measures",
+                                        "imp_fines", "imp_rep_damage", "imp_prev_provison", "imp_discourage",
+                                        "imp_complain", "imp_goodwill")]
+
+impact_vars_num19 <- data.frame(lapply(impact_vars19, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+# Check correlation
+cor_matrix_impact19 <- cor(impact_vars_num19, use = "complete.obs", method = "spearman")
+print(cor_matrix_impact19)
+
+
+
+#Survey2024 Analysis:
+
+#Cleaning the Data
+
+#Renaming column names
+survey2024 <- survey2024 %>% rename(
+  man_board_cyber = manage1,
+  man_out_cyber = manage2,
+  man_pol_cyber = manage3,
+  man_BCP_cyber = manage4,
+  man_dont_know = manage6,
+  man_none = manage7,
+  man_data = manage8,
+  
+  iden_risk_assess = ident4,
+  iden_threat_intel = ident5,
+  iden_dont_know = ident6,
+  iden_none = ident7,
+  iden_IDS = ident11,
+  iden_audit = ident12,
+  iden_pen_test = ident13,
+  iden_test_staff = ident14,
+  
+  pol_rem_device = policy1,
+  pol_remote = policy2,
+  pol_permit = policy3,
+  pol_pers_devices = policy4,
+  pol_cloud = policy5,
+  pol_dont_know = policy8,
+  pol_none = policy9,
+  pol_smart = policy10,
+  pol_data = policy12,
+  pol_DSP = policy13,
+  
+  type_ransomware = type1,
+  type_viruses = type2,
+  type_web_attack = type3,
+  type_online_banking = type4,
+  type_impersonation = type5,
+  type_fraud_email = type6,
+  type_unauth_use_int = type7,
+  type_unauth_use_ext = type8,
+  type_other = type9,
+  type_dont_know = type10,
+  type_none = type11,
+  type_refused = type12,
+  type_unauth_use_stu = type13,
+  type_unauth_listen = type15,
+  type_takeover = type16,
+  
+  
+  out_damage = outcome1,
+  out_personal = outcome2,
+  out_perm_loss = outcome3,
+  out_temp_loss = outcome4,
+  out_lost_asset = outcome5,
+  out_money_stole = outcome6,
+  out_web_down = outcome7,
+  out_access_third = outcome8,
+  out_dont_know = outcome9,
+  out_none = outcome10,
+  out_ransom = outcome11,
+  out_device_corrupt = outcome12,
+  out_comp_accounts = outcome13, 
+  
+  imp_daytoday = impact1,
+  imp_revenue = impact2,
+  imp_add_time = impact3,
+  imp_repair = impact4,
+  imp_new_measures = impact5,
+  imp_fines = impact7,
+  imp_rep_damage = impact8,
+  imp_prev_provison = impact9,
+  imp_discourage = impact10,
+  imp_none = impact11,
+  imp_dont_know = impact12,
+  imp_complain = impact13,
+  imp_goodwill = impact14)
+
+# Filtering dataset
+survey2024_cleaned <- survey2024 %>%
+  select(
+    # Organisational Profile
+    samptype, questtype, typex, income2, sector_comb2, sizeb, priority, update, insurex,
+    
+    # Attitudes to Cybersecurity
+    man_board_cyber,man_out_cyber, man_pol_cyber, man_BCP_cyber, man_data, man_dont_know, man_none,
+   
+    
+    # Training
+    trained,
+    
+    # Identification measures
+    iden_risk_assess, iden_threat_intel, iden_IDS, iden_audit, iden_pen_test, iden_test_staff, iden_dont_know, iden_none, 
+    
+    # Policies
+    pol_rem_device, pol_remote, pol_permit, pol_pers_devices, pol_cloud, pol_smart, pol_data, pol_DSP, pol_dont_know, pol_none, review,
+    
+    # Incidents and Types of Incidents
+    type_ransomware, type_viruses, type_web_attack, type_online_banking,
+    type_impersonation, type_fraud_email, type_unauth_use_int, type_unauth_use_ext, type_unauth_use_stu,
+    type_unauth_listen, type_takeover,
+    type_other, type_dont_know, type_none, type_refused,
+    freq, crimecost_bands,         
+    
+    # Outcomes
+    out_damage, out_personal, out_perm_loss, out_temp_loss, out_lost_asset,
+    out_money_stole, out_web_down, out_access_third, out_ransom, out_comp_accounts, out_device_corrupt, out_dont_know, out_none,
+    
+    # Impacts
+    imp_daytoday, imp_revenue, imp_add_time, imp_repair, imp_new_measures,
+    imp_fines, imp_rep_damage, imp_prev_provison, imp_discourage,
+    imp_none, imp_dont_know, imp_complain, imp_goodwill)
+    
+
+#Renaming the variable labels
+survey2024_cleaned$samptype <- factor(survey2024_cleaned$samptype, levels = c(1, 2, 3), labels = c("Market Location Sample", "Charity regulator sample", "Schools, colleges and universities databases"))
+survey2024_cleaned$questtype <- factor(survey2024_cleaned$questtype, levels = c(-1, 1, 2, 3), labels = c("Not asked", "Private Sector", "Charity", "State Education Institution"))
+survey2024_cleaned$typex <- factor(survey2024_cleaned$typex, levels = c(1, 2, 3, 4, 5), labels = c("Private Sector", "Charity", "Primary education institution", "Higher education institution", "Further education institution"))
+survey2024_cleaned$income2 <- factor(survey2024_cleaned$income2, levels = c(-97, 1, 2, 3, 4), labels = c("Unknown", "Not asked", "Less than £100,000", "Between £100,000 and £500,000", "More than £500,000"))
+survey2024_cleaned$sector_comb2 <- factor(survey2024_cleaned$sector_comb2, levels = c(-1,1,2,3,4,5,6,7,8,9,10,11,12,13), labels = c("Not Asked", "Administration or real estate", "Construction", "Education", "Entertainment, service or membership organisations", "Finance or insurance", "Food or hospitality", "Health, social care or social work", "Information or communication", "Professional, scientific or technical", "Retail or wholesale", "Transport or storage", "Utilities or production", "Agriculture"))
+survey2024_cleaned$sizeb <- factor(survey2024_cleaned$sizeb, levels = c(1, 2, 3, 4,5), labels = c("Not asked", "Micro", "Small", "Medium", "Large"))
+survey2024_cleaned$priority <- factor(survey2024_cleaned$priority, levels = c(97,-1, 1,2,3,4), labels = c("Don't know","Not asked", "Very high", "Fairly high", "Fairly low", "Very low"))
+survey2024_cleaned$update <- factor(survey2024_cleaned$update, levels = c(-97,-1, 1,2,3,4,5,6,7,8), labels = c("Don't know", "Not asked", "Never", "Less than once a year", "Annually", "Quarterly", "Monthly", "Weekly", "Daily", "Each time there is a breach or attack"))
+survey2024_cleaned$insurex <- factor(survey2024_cleaned$insurex, levels = c(-97,-1,1,2,3), labels = c("Don't know", "Not asked", "We have a specific cyber security insurance policy", "We have cyber security cover as part of a broader insurance policy", "We are not insured against cyber security breaches or attacks"))
+
+survey2024_cleaned$trained <- factor(survey2024_cleaned$trained, levels = c(-97,-1,1,2), labels = c("Don't know", "Not asked", "Yes", "No"))
+
+survey2024_cleaned$man_board_cyber <- factor(survey2024_cleaned$man_board_cyber, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$man_out_cyber <- factor(survey2024_cleaned$man_out_cyber, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$man_pol_cyber <- factor(survey2024_cleaned$man_pol_cyber, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$man_BCP_cyber <- factor(survey2024_cleaned$man_BCP_cyber, levels = -1:1, labels = c("Not asked", "No", "Yes"))                                            
+survey2024_cleaned$man_data <- factor(survey2024_cleaned$man_data, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$man_dont_know <- factor(survey2024_cleaned$man_dont_know, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$man_none <- factor(survey2024_cleaned$man_none, levels = -1:1, labels = c("Not asked", "No", "Yes"))                                      
+
+
+survey2024_cleaned$iden_risk_assess <- factor(survey2024_cleaned$iden_risk_assess, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_threat_intel <- factor(survey2024_cleaned$iden_threat_intel, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_IDS <- factor(survey2024_cleaned$iden_IDS, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_audit <- factor(survey2024_cleaned$iden_audit, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_pen_test <- factor(survey2024_cleaned$iden_pen_test, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_test_staff <- factor(survey2024_cleaned$iden_test_staff, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_dont_know <- factor(survey2024_cleaned$iden_dont_know, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$iden_none <- factor(survey2024_cleaned$iden_none, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+
+survey2024_cleaned$pol_rem_device <- factor(survey2024_cleaned$pol_rem_device, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_remote <- factor(survey2024_cleaned$pol_remote, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_permit <- factor(survey2024_cleaned$pol_permit, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_pers_devices <- factor(survey2024_cleaned$pol_pers_devices, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_cloud <- factor(survey2024_cleaned$pol_cloud, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_smart <- factor(survey2024_cleaned$pol_smart, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_data <- factor(survey2024_cleaned$pol_data, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_DSP <- factor(survey2024_cleaned$pol_DSP, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_dont_know <- factor(survey2024_cleaned$pol_dont_know,levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$pol_none <- factor(survey2024_cleaned$pol_none, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$review <- factor(survey2024_cleaned$review, levels = 1:4, labels = c("Within the last 6 months", "6 to under 12 months ago", "12 to under 24 months ago", "24 months ago or earlier"))
+
+survey2024_cleaned$type_ransomware <- factor(survey2024_cleaned$type_ransomware,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_viruses <- factor(survey2024_cleaned$type_viruses,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_web_attack <- factor(survey2024_cleaned$type_web_attack,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_online_banking <- factor(survey2024_cleaned$type_online_banking,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_impersonation <- factor(survey2024_cleaned$type_impersonation,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_fraud_email <- factor(survey2024_cleaned$type_fraud_email,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_unauth_use_int <- factor(survey2024_cleaned$type_unauth_use_int,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_unauth_use_ext <- factor(survey2024_cleaned$type_unauth_use_ext,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_unauth_use_stu <- factor(survey2024_cleaned$type_unauth_use_stu,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_unauth_listen <- factor(survey2024_cleaned$type_unauth_listen,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_takeover <- factor(survey2024_cleaned$type_takeover,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_dont_know <- factor(survey2024_cleaned$type_dont_know,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$type_none <- factor(survey2024_cleaned$type_none,  levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$freq <- factor(survey2024_cleaned$freq, levels = c(-99,-97,-1,1,2,3,4,5,6), labels = c("Refused", "Don't know", "Not asked", "Once only", "More than once but less than once a month", "Roughly once a month", "Roughly once a week", "Roughly once a day", "Several times a day"))
+survey2024_cleaned$crimecost_bands <- factor(survey2024_cleaned$crimecost_bands, levels = c(-99,-97,-1,1,2,3,4,5,6,7,8,9,10,11,12,13), labels = c("Refused", "Don't know", "Not asked", "No cost incurred", "Less than £100",  "£100 to less than £500", "£500 to less than £1,000", "£1,000 to less than £5,000", "£5,000 to less than £10,000", "£10,000 to less than £20,000", "£20,000 to less than £50,000", "£50,000 to less than £100,000", "£100,000 to less than £500,000", "£500,000 to less than £1 million", "£1 million to less than £5 million", "£5 million or more"))
+
+survey2024_cleaned$out_damage <- factor(survey2024_cleaned$out_damage, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_personal <- factor(survey2024_cleaned$out_personal, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_perm_loss <- factor(survey2024_cleaned$out_perm_loss, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_temp_loss <- factor(survey2024_cleaned$out_temp_loss, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_lost_asset <- factor(survey2024_cleaned$out_lost_asset, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_money_stole <- factor(survey2024_cleaned$out_money_stole, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_web_down <- factor(survey2024_cleaned$out_web_down, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_access_third <- factor(survey2024_cleaned$out_access_third, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_ransom <- factor(survey2024_cleaned$out_ransom, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_comp_accounts <- factor(survey2024_cleaned$out_comp_accounts, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_dont_know <- factor(survey2024_cleaned$out_dont_know, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$out_none <- factor(survey2024_cleaned$out_none, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+
+survey2024_cleaned$imp_daytoday <- factor(survey2024_cleaned$imp_daytoday, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_revenue  <- factor(survey2024_cleaned$imp_revenue, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_add_time  <- factor(survey2024_cleaned$imp_add_time, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_repair  <- factor(survey2024_cleaned$imp_repair, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_new_measures  <- factor(survey2024_cleaned$imp_new_measures, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_fines  <- factor(survey2024_cleaned$imp_fines, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_rep_damage  <- factor(survey2024_cleaned$imp_rep_damage, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_prev_provison  <- factor(survey2024_cleaned$imp_prev_provison, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_discourage  <- factor(survey2024_cleaned$imp_discourage, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_none  <- factor(survey2024_cleaned$imp_none,levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_dont_know  <- factor(survey2024_cleaned$imp_dont_know, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_complain  <- factor(survey2024_cleaned$imp_complain, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+survey2024_cleaned$imp_goodwill  <- factor(survey2024_cleaned$imp_goodwill, levels = -1:1, labels = c("Not asked", "No", "Yes"))
+
+
+#Exploratory Data Analysis
+
+#Frequency of cybersecurity Incidents by Business Size
+survey2024_cleaned %>%
+  filter(!is.na(freq), !is.na(sizeb), sizeb != "Not asked") %>%
+  ggplot(aes(x = sizeb, fill = freq)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Frequency of Cybersecurity Incidents by Business Size",
+       x = "Business Size", y = "Count", fill = "Incident Frequency") +
+  theme_minimal()
+
+# Frequency of cybersecurity Incidents by Sector
+survey2024_cleaned %>%
+  filter(!is.na(freq), !is.na(sector_comb2)) %>%
+  ggplot(aes(x = as.factor(sector_comb2), fill = freq)) +
+  geom_bar(position = "dodge") +
+  scale_x_discrete(labels = c(
+    "-1" = "Not Asked",
+    "1" = "Administration or real estate",
+    "2" = "Construction",
+    "3" = "Education",
+    "4" = "Entertainment, service or membership organisations",
+    "5" = "Finance or insurance",
+    "6" = "Food or hospitality",
+    "7" = "Health, social care or social work",
+    "8" = "Information or communication",
+    "9" = "Professional, scientific or technical",
+    "10" = "Retail or wholesale",
+    "11" = "Transport or storage",
+    "12" = "Utilities or production",
+    "13" = "Agriculture"
+  )) +
+  labs(title = "Frequency of Cybersecurity Incidents by Sector",
+       x = "Sector", y = "Count", fill = "Incident Frequency") +
+  theme_minimal()
+
+
+#Frequency of Attack Types
+survey2024_cleaned <- survey2024_cleaned %>%
+  mutate(across(c(type_ransomware, type_viruses, type_web_attack, type_online_banking,
+                  type_impersonation, type_fraud_email, type_unauth_use_int,
+                  type_unauth_use_ext, type_unauth_use_stu, type_unauth_listen, type_takeover),
+                ~ case_when(
+                  . == -1 ~ "Not asked",
+                  . == 0 ~ "No",
+                  . == 1 ~ "Yes",
+                  TRUE ~ as.character(.)
+                )))
+
+custom_labels24 <- c(
+  "type_ransomware" = "Ransomware",
+  "type_viruses" = "Viruses",
+  "type_web_attack" = "Website/Online Attacks",
+  "type_online_banking" = "Hacking Online Banking",
+  "type_impersonation" = "Impersonation",
+  "type_fraud_email" = "Fraudulent Emails",
+  "type_unauth_use_int" = "Unauthorised Use by Staff",
+  "type_unauth_use_ext" = "Unauthorised Use by Hackers",
+  "type_unauth_use_stu" = "Unauthorised Use by Students",
+  "type_unauth_listen" = "Unauthorised Listening",
+  "type_takeover" = "Website Takeovers")
+
+attack2024_data <- survey2024_cleaned %>%
+  select(all_of(names(custom_labels24))) %>%  # Select only needed columns
+  mutate(across(everything(), as.character)) %>%  # Make sure they are character
+  summarise(across(everything(), ~ sum(. == "Yes", na.rm = TRUE))) %>%  # Count "Yes"
+  pivot_longer(cols = everything(), names_to = "attack2024_type", values_to = "incident_count") %>%
+  mutate(attack2024_type = recode(attack2024_type, !!!custom_labels24))  # Apply nice names
+
+print(attack2024_data)
+
+ggplot(attack2024_data, aes(x = attack2024_type, y = incident_count, fill = attack2024_type)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  labs(title = "Frequency of Cybersecurity Attack Types in 2024",
+       x = "Attack Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Outcomes of Cyber Attacks 
+outcome_labels24 <- c(
+  "out_damage" = "Loss of files or data",
+  "out_personal" = "Loss of personal data",
+  "out_perm_loss" = "Permanent loss of data",
+  "out_temp_loss" = "Temporary loss of data",
+  "out_lost_asset" = "Loss of assets, intellectual property or other",
+  "out_money_stole" = "Money stolen",
+  "out_web_down" = "Website or online services taken down",
+  "out_access_third" = "Access to other systems or data by third parties",
+  "out_ransom" = "Ransom payment made",
+  "out_comp_accounts" = "Compromised accounts",
+  "out_device_corrupt" = "Corrupted software or systems")
+
+# Select relevant columns for outcomes
+outcome2024_data <- survey2024_cleaned %>%
+  select(all_of(names(outcome_labels24))) %>%
+  mutate(across(everything(), as.character)) %>%
+  
+  summarise(across(everything(), ~ sum(. == "Yes", na.rm = TRUE))) %>%
+  pivot_longer(cols = everything(), names_to = "outcome_type24", values_to = "count") %>%
+  mutate(outcome_type24 = recode(outcome_type24, !!!outcome_labels24))
+
+print(outcome2024_data)
+
+
+ggplot(outcome2024_data, aes(x = reorder(outcome_type24, count), y = count, fill = outcome_type24)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  
+  labs(title = "Outcomes of Cybersecurity Attacks (2024)",
+       x = "Consequence Type", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Impact of Cyber Attacks 
+impact_labels24 <- c(
+  "imp_daytoday" = "Impact day-to-day work",
+  "imp_revenue" = "Loss of Revenue",
+  "imp_add_time" = "Time to deal with attack",
+  "imp_repair" = "Repair/Recovery costs",
+  "imp_new_measures" = "Implemented New Measures",
+  "imp_fines" = "Fines",
+  "imp_rep_damage" = "Reputational Damage",
+  "imp_prev_provison" = "Prevented provision of goods",  # Note: your column is 'provison' not 'provision'
+  "imp_discourage" = "Discouraged from future activities",
+  "imp_complain" = "Customer complaints",
+  "imp_goodwill" = "Goodwill compensation")
+
+impact2024_data <- survey2024_cleaned %>%
+  select(all_of(names(impact_labels24))) %>% 
+  summarise(across(everything(), ~ sum(. == "Yes", na.rm = TRUE))) %>%  
+  pivot_longer(cols = everything(), names_to = "impact_type24", values_to = "count") %>%
+  mutate(impact_type24 = recode(impact_type24, !!!impact_labels24))  
+
+
+print(impact2024_data)
+
+
+ggplot(impact2024_data, aes(x = reorder(impact_type24, count), y = count, fill = impact_type24)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +
+  labs(title = "Impacts of Cybersecurity Attacks (2024)",
+       x = "Consequence Type",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+names(survey2024_cleaned)
+
+
+#Correlation Tests
+
+# Management Arrangements to Cybersecurity
+manage_vars24 <- survey2024_cleaned[, c("man_board_cyber","man_out_cyber","man_pol_cyber","man_BCP_cyber","man_data")]
+
+manage_vars_num24 <- data.frame(lapply(manage_vars24, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_man24 <- cor(manage_vars_num24, use = "complete.obs", method = "spearman")
+print(cor_matrix_man24)
+
+
+# Identification Measures
+iden_vars24 <- survey2024_cleaned[, c("iden_risk_assess", "iden_threat_intel", "iden_IDS", 
+                                      "iden_audit", "iden_pen_test", "iden_test_staff")]
+
+iden_vars_num24 <- data.frame(lapply(iden_vars24, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_iden24 <- cor(iden_vars_num24, use = "complete.obs", method = "spearman")
+print(cor_matrix_iden19)
+
+
+# Cybersecurity Policies
+policy_vars24 <- survey2024_cleaned[, c("pol_rem_device", "pol_remote", "pol_permit", "pol_pers_devices", 
+                                        "pol_cloud", "pol_smart", "pol_data", "pol_DSP")]
+
+policy_vars_num24 <- data.frame(lapply(policy_vars24, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_policy24 <- cor(policy_vars_num24, use = "complete.obs", method = "spearman")
+print(cor_matrix_policy24)
+
+# Outcomes of Cybersecurity Attacks
+outcome_vars24 <- survey2024_cleaned[, c("out_damage", "out_personal", "out_perm_loss", "out_temp_loss", 
+                                         "out_lost_asset", "out_money_stole", "out_web_down", "out_access_third")]
+
+outcome_vars_num24 <- data.frame(lapply(outcome_vars24, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_outcomes24 <- cor(outcome_vars_num24, use = "complete.obs", method = "spearman")
+print(cor_matrix_outcomes24)
+
+
+# Impacts of Cybersecurity Attacks
+impact_vars24 <- survey2024_cleaned[, c("imp_daytoday", "imp_revenue", "imp_add_time", "imp_repair", "imp_new_measures",
+                                        "imp_fines", "imp_rep_damage", "imp_prev_provison", "imp_discourage",
+                                         "imp_complain", "imp_goodwill")]
+
+impact_vars_num24 <- data.frame(lapply(impact_vars24, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(factor(x, levels = unique(x)))} else {x}}))
+
+cor_matrix_impact24 <- cor(impact_vars_num24, use = "complete.obs", method = "spearman")
+print(cor_matrix_impact24)
+
+
+# Prediction of Cybersecurity Threats (2019-2024)
+get_props <- function(df, yr) {
+  df %>%
+    filter(!is.na(freq), !freq %in% c("Refused","Don't know")) %>%
+    count(freq) %>%
+    mutate(year = yr,
+           proportion = n / sum(n)) %>%
+    select(year, freq, proportion)
+}
+
+actual_2019 <- get_props(survey2019_cleaned, 2019)
+actual_2024 <- get_props(survey2024_cleaned, 2024)
+
+# 2. Predict 2024 from 2019 and 2029 from 2024
+predict_one <- function(actual_df, future_year) {
+  actual_df %>%
+    group_by(freq) %>%
+    do({
+      model <- lm(proportion ~ year, data = .)
+      pred  <- predict(model, newdata = data.frame(year = future_year))
+      data.frame(year = future_year, proportion = pred)
+    }) %>%
+    ungroup()
+}
+
+pred_2024 <- predict_one(actual_2019, 2024) %>% mutate(type = "Predicted")
+pred_2029 <- predict_one(actual_2024, 2029) %>% mutate(type = "Predicted")
+
+# 3. Tag actuals
+actual_2019 <- actual_2019 %>% mutate(type = "Actual")
+actual_2024 <- actual_2024 %>% mutate(type = "Actual")
+
+# 4. Build line‐segment data for the two dashed connections
+line_19_24 <- bind_rows(
+  actual_2019 %>%   select(year, freq, proportion),
+  pred_2024        %>% select(year, freq, proportion)
+)
+
+line_24_29 <- bind_rows(
+  actual_2024 %>%   select(year, freq, proportion),
+  pred_2029        %>% select(year, freq, proportion)
+)
+
+# 5. Combine all points for plotting
+all_points <- bind_rows(actual_2019, actual_2024, pred_2024, pred_2029)
+
+# 6. Single plot
+ggplot() +
+  # dashed lines
+  geom_line(data = line_19_24, aes(x = year, y = proportion, color = freq, group = freq),
+            linetype = "dashed", size = 0.5) +
+  geom_line(data = line_24_29, aes(x = year, y = proportion, color = freq, group = freq),
+            linetype = "dashed", size = 0.5) +
+  # points
+  geom_point(data = all_points,
+             aes(x = year, y = proportion, shape = type, color = freq),
+             size = 2) +
+  scale_shape_manual(values = c(16, 17)) +  # circle=actual, triangle=predicted
+  labs(
+    title = "Cyber Attack Frequency: 2019→2024 Predicted & 2024→2029 Predicted",
+    x = "Year",
+    y = "Proportion of Businesses",
+    color = "Attack Frequency Level",
+    shape = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
